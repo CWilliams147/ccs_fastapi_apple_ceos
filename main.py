@@ -6,15 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from db_connect import session
 
 # These are our models
-from models import CEO
+from models import CEO, CEOCreate
 
 app = FastAPI()
 
-# Setup our origins...
-# ...for now it's just our local environments
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "http://localhost:5173"
 ]
 
 # Add the CORS middleware...
@@ -35,11 +34,11 @@ def home():
 
 # C
 @app.post("/create")
-async def create_ceo(name: str, slug: str, year: int):
-    ceo = CEO(name=name, slug=slug, year=year)
-    session.add(ceo)
+async def create_ceo(ceo_data: CEOCreate):
+    new_ceo = CEO(name=ceo_data.name, slug=ceo_data.slug, year=ceo_data.year)
+    session.add(new_ceo)
     session.commit()
-    return {"CEO added": ceo.name}
+    return {"CEO added": new_ceo.name}
 
 # R
 @app.get('/ceos')
@@ -49,11 +48,9 @@ def get_ceos():
 
 
 @app.get('/ceos/{slug}')
-def get_ceos(slug: str):
-    # This will return any value that is "like" the slug
-    ceo = session.query(CEO).filter(CEO.slug.like(f'%{slug}%'))
-    # This will return all entries
-    return ceo.all()
+def get_single_ceo(slug: str):
+    ceo = session.query(CEO).filter(CEO.slug == slug)
+    return ceo.one()
 
 # U
 @app.put('/ceos/{id}/update')
